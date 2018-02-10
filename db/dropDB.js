@@ -16,8 +16,8 @@ var con = mysql.createConnection({
 con.connect(function(err) {
     if (err) throw err;
     console.log("Connected!");
-    con.query("DROP DATABASE surveyBuilder", function (err, result) {
+    con.query("DROP DATABASE IF EXISTS surveyBuilder", function (err, result) {
       if (err) throw err;
-      console.log("Database deleted");
+      console.log("surveyBuilder Database deleted");
     });
   });
