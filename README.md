@@ -6,6 +6,8 @@ Notes for installing.
 
 1. Install node.js on you computer.
 2. Install a mySQL database on your computer.  
-`Install npm install mysql` in the command line.
-3. Rename config_template.json in the db folder to config.json and put in your db information.  If it is named config.json the .gitignore file will force github to ignore the file and your db login information will be kept private.
-
+3. `npm install mysql` in the command line.
+4. `npm install express` in the command line.
+5. `npm install formidable` in the command line.
+6. `npm install nodemailer` in the command line.
+7. Rename config_template.json in the db folder to config.json and put in your db information.  If it is named config.json the .gitignore file will force github to ignore the file and your db login information will be kept private.
