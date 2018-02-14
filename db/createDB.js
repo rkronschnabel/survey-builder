@@ -6,16 +6,16 @@ var fs= require('fs');
 console.log("fs set");
 var config = JSON.parse(fs.readFileSync('config.json','utf8'));
 console.log("config set");
+function create(){
+  var con = mysql.createConnection({
+    host: config.mysql.host,
+    user: config.mysql.user,
+    password: config.mysql.password
+  });
 
-var con = mysql.createConnection({
-  host: config.mysql.host,
-  user: config.mysql.user,
-  password: config.mysql.password
-});
-
-con.connect(function(err) {
+  con.connect(function(err) {
     if (err) throw err;
-    console.log("Connected!");    
+    console.log("Connected! con");    
     con.query("DROP DATABASE IF EXISTS surveyBuilder", function (err, result) {
       if (err) throw err;
       console.log("surveyBuilder Database deleted");
@@ -26,16 +26,16 @@ con.connect(function(err) {
     });
   });
 
-var con2 = mysql.createConnection({
-  host: config.mysql.host,
-  user: config.mysql.user,
-  password: config.mysql.password,
-  database: "surveyBuilder"
-});
+  var con2 = mysql.createConnection({
+    host: config.mysql.host,
+    user: config.mysql.user,
+    password: config.mysql.password,
+    database: "surveyBuilder"
+  });
 
-con2.connect(function(err) {
+  con2.connect(function(err) {
     if (err) throw err;
-    console.log("Connected!");  
+    console.log("Connected! con2");  
     con2.query("DROP TABLE IF EXISTS user", function (err, result) {
       if (err) throw err;
       console.log("user Table deleted");
@@ -55,3 +55,6 @@ con2.connect(function(err) {
           console.log("survey Table created");
         });
     });
+};
+
+create();

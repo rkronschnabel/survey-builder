@@ -1,2 +1,3 @@
 config.*
 *.sql
+survey-builder-test.js

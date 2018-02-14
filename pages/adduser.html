@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Survey Builder - User</title>
+        <a href="/logout">Logout</a>
+    </head>
+    <body>
+        <header>
+            <h1>Survey Builder</h1>
+            <h2>User</h2>
+        </header>
+        <main>
+            <form action="/userupdate" method="post">
+                <div>
+                    <label>Username:</label>
+                    <input type="text" name="username" required>
+                    <label>Email Address:</label>
+                    <input type="text" name="email" required>
+                    <label>Admin</label>
+                    <input type="checkbox" name="admin">
+                </div>
+                <div>
+                    <a href="/sendreset">Reset Password</a>                    
+                </div>
+                <div>
+                    <div>
+                        <button type="submit">Save</button>
+                    </div>
+                </div>
+            </form>
+        </main>
+  
+    </body>
+</html>
