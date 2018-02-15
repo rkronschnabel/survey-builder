@@ -4,12 +4,15 @@ var app = express();
 var bodyParser = require('body-parser');
 var http = require('http');
 var url = require('url');
+var nodemailer = require('nodemailer');
 var json = require('config.json')('lib/config.json');
 var fs= require('fs');
 var config = JSON.parse(fs.readFileSync('lib/config.json','utf8'));
 var returnedArray = new Array();
 var returned = "";
 var authenticated = 0;
+var fromemail = "";
+var fpemail = "";
 
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
@@ -22,6 +25,23 @@ var pool = mysql.createPool({
     database : 'surveyBuilder',
     debug    :  false
 });
+
+var emailtransporter = nodemailer.createTransport({
+    service: config.emailaccount.service,
+    auth: {
+        user: config.emailaccount.user,
+        pass: config.emailaccount.pass
+    }
+});
+
+var fromemail = "eponymousryan@gmail.com";
+
+var mailOptions = {
+    from: "",
+    to: "",
+    subject: "",
+    html: ""
+};
 
 function handle_database(req,res) {
 
@@ -38,6 +58,7 @@ function handle_database(req,res) {
         console.log("req.url = " + req.url);  
         console.log("q.pathname = " + q.pathname);  
         var filename = "./pages" + q.pathname;
+        var filenames = [];
         console.log("filename = " + filename);  
 
         if (q.pathname == "/"){
@@ -66,12 +87,49 @@ function handle_database(req,res) {
                 returned=result;
                 if(returned != null){
                     filename = "./pages/emailsent.html";
+                    mailOptions = {
+                        from: fromemail,
+                        to: returned,
+                        subject: "Forgot Password",
+                        html: 'Click <a href="http://localhost:3000/resetpassword?email=' + returned + '">here</a> to reset password.'
+                    };
+                    emailtransporter.sendMail(mailOptions, function(error, info){
+                        if (error) {
+                            console.log(error);
+                        } else {
+                            console.log('Email sent: ' + info.response);
+                        }
+                    });
                 } else {
                     filename = "./pages/forgotpassword.html";
                 }
                 show_page(filename,req,res);
             });
         }  
+
+        if (q.pathname == "/resetpassword"){
+            email = q.query.email;
+            filename = "./pages/resetpassword.html"
+            show_page(filename,req,res); 
+        }
+
+        if (q.pathname == "/sendnewpassword"){
+            if(req.body.password == req.body.confirmpassword){
+                update_password(err,connection,res,req,function(result){
+                    authenticated = 0;
+                    returnedArray=result;
+                    if (returned == 1){
+                        filename = "./pages/resetpassword.html";
+                    } else {
+                        filename = "./pages/success.html";          
+                    }
+                    show_page(filename,req,res);   
+                });    
+            } else {
+                filename = "./pages/resetpassword.html";
+                show_page(filename,req,res);   
+            }       
+        }
 
         if (q.pathname == "/login"){
             authenticate(err,connection,res,req,function(result){
@@ -86,6 +144,7 @@ function handle_database(req,res) {
                 show_page(filename,req,res);   
             });
         }
+        
         if (q.pathname == "/test.html"){
             show_survey(err,connection,res);
         }
@@ -157,7 +216,8 @@ function authenticate(err,connection,res,req,callback) {
             console.log("Logged In = " + loggedin);
             returnArray = [null, loggedin];
             console.log("Return Array = " + returnArray);
-        }   
+        } 
+        console.log("returnArray = " + returnArray);  
         return callback(returnArray);
     });
 }
@@ -171,12 +231,30 @@ function checkemail(err,connection,res,req,callback) {
         if(!err & rows[0] != null) {             
             console.log(rows[0]);
             if (rows[0].email == email) {
-                returnVar = email;
+                console.log("rows[0].email = " + rows[0].email);
+                returnVar = [rows[0].email];
             }   
         }    
         else {
-            returnVar = null;
+            returnVar = [null];
         }   
+        console.log("returnVar = " + returnVar);
+        return callback(returnVar);
+    });
+}
+
+function update_password(err,connection,res,req,callback) {
+    console.log("update password");
+    var password = req.body.password;
+    var returnVar = [];
+    var par = [password, email];
+    connection.query("UPDATE user SET password = ? WHERE email = ?",par,function(err,rows){
+        connection.release();
+        if(!err) {
+            returnVar = 1;
+        } else {
+            returnVar = 0;
+        }
         return callback(returnVar);
     });
 }

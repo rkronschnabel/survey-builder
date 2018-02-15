@@ -3,5 +3,10 @@
       "host": "",
       "user": "",
       "password": ""
+    },
+    "emailaccount": {
+      "service": "",
+      "user": "",
+      "pass": ""
     }
   }
