@@ -11,8 +11,14 @@ var config = JSON.parse(fs.readFileSync('lib/config.json','utf8'));
 var returnedArray = new Array();
 var returned = "";
 var authenticated = 0;
+var admininstrator = 0;
+var username = "";
+var userid = null;
+var adminuserid = null;
 var fromemail = "";
 var fpemail = "";
+var surveyidselection = null;
+var host_address = "http://localhost:3000/"
 
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
@@ -73,6 +79,8 @@ function handle_database(req,res) {
 
         if (q.pathname == "/logout"){
             authenticated = 0;
+            administrator = 0;
+            username = "";
             filename = "./pages/login.html";
             show_page(filename,req,res);
         }  
@@ -137,6 +145,9 @@ function handle_database(req,res) {
                 returnedArray=result;
                 if (returnedArray[1] == 1){
                     authenticated = 1;
+                    userid=result[0];
+                    administrator = result[2];
+                    username = result[3];
                     filename = "./pages/dashboard.html";
                 } else {
                     filename = "./pages/login.html";          
@@ -144,10 +155,129 @@ function handle_database(req,res) {
                 show_page(filename,req,res);   
             });
         }
+
+        if (q.pathname == "/admin"){
+            filename = "./pages/admin.html";
+            show_page(filename,req,res);
+        }
+
+        /** NOT FINAL **/
+
+        if (q.pathname == "/adduser"){
+            if (administrator == 1){
+                adminuserid = null;
+                filename = "./pages/user.html";
+                
+            } else {
+                filename = "./pages/admin.html";
+            }
+            show_page(filename,req,res);
+        }
+
+        if (q.pathname == "/userupdate"){
+            console.log("Admin User Id = " + adminuserid)
+            if (adminuserid == null) {
+                createuser(err,connection,res,req,function(result){
+                    returned=result;
+                    if (returned == 1){
+                        console.log("Returned = " + returned);
+                        filename = "./pages/success.html";
+                    } else {
+                        console.log("Returned (failed) = " + returned);
+                        filename = "./pages/underconstruction.html"; 
+                    }
+                    show_page(filename,req,res);   
+                });
+            } else {
+                updateuser(err,connection,res,req,aid,function(result){
+                    returnedArray=result;
+                    if (returned == 1){
+                        filename = "./pages/success.html";
+                    } else {
+                        filename = "./pages/underconstruction.html"; 
+                    }
+                    show_page(filename,req,res);
+                });
+            }
+        }
+
+        if (q.pathname == "/edituser"){            
+            if (administrator == 1){
+                filename = "./pages/edituser.html";
+            } else {
+                filename = "./pages/admin.html";
+            }
+            show_page(filename,req,res);
+        }
+
+        if (q.pathname == "/chooseuser"){
+            filename = "./pages/underconstruction.html";
+            show_page(filename,req,res);
+        }
+
+        if (q.pathname == "/deleteresponse"){
+            filename = "./pages/choosesurvey.html";
+            show_page(filename,req,res);
+        }
+
+        if (q.pathname == "/choosesurvey"){
+            filename = "./pages/deleteresponse.html";
+            show_page(filename,req,res);
+        }
+
+        if (q.pathname == "/deleteresponseids"){
+            filename = "./pages/underconstruction.html";
+            show_page(filename,req,res);
+        }
+
+        if (q.pathname == "/deletesurvey"){
+            filename = "./pages/deletesurvey.html";
+            show_page(filename,req,res);
+        }
+
+        if (q.pathname == "/sendsurveydeletion"){
+            filename = "./pages/underconstruction.html";
+            show_page(filename,req,res);
+        }
+
+        if (q.pathname == "/newsurvey"){
+            surveyidselection = null;            
+            filename = "./pages/survey.html";
+            show_page(filename,req,res);
+        }
+
+        if (q.pathname == "/surveyupdate"){
+            console.log("Admin User Id = " + adminuserid)
+            if (surveyidselection == null) {
+                createsurvey(err,connection,res,req,function(result){
+                    returned=result;
+                    if (returned == 1){
+                        console.log("Returned = " + returned);
+                        filename = "./pages/success.html";
+                    } else {
+                        console.log("Returned (failed) = " + returned);
+                        filename = "./pages/underconstruction.html"; 
+                    }
+                    show_page(filename,req,res);   
+                });
+            } else {
+                updatesurvey(err,connection,res,req,aid,function(result){
+                    returnedArray=result;
+                    if (returned == 1){
+                        filename = "./pages/success.html";
+                    } else {
+                        filename = "./pages/underconstruction.html"; 
+                    }
+                    show_page(filename,req,res);
+                });
+            }
+        }
+
         
         if (q.pathname == "/test.html"){
             show_survey(err,connection,res);
         }
+
         /**connection.query("select * from user",function(err,rows){
             connection.release();
             if(!err) {
@@ -167,6 +297,8 @@ function handle_database(req,res) {
                 res.json(rows);
             }       
         });**/
+        
+        /** NOT FINAL **/
 
         connection.on('error', function(err) {      
               res.json({"code" : 100, "status" : "Error in connection database"});
@@ -201,20 +333,20 @@ function authenticate(err,connection,res,req,callback) {
     var pswd = req.body.password;
     var loggedin = 0;
     var returnArray = [];
-    connection.query("select username, password, userid from user WHERE username=? AND password=?",[un,pswd],function(err,rows){
+    connection.query("select * from user WHERE username=? AND password=?",[un,pswd],function(err,rows){
         connection.release();
         if(!err & rows[0] != null) {             
             console.log(rows[0]);
             if (rows[0].username == un & rows[0].password == pswd) {
                 loggedin = 1;
                 console.log("Logged In = " + loggedin);
-                returnArray = [rows[0].userid, loggedin];
+                returnArray = [rows[0].userid, loggedin, rows[0].admin, rows[0].username];
                 console.log("Return Array = " + returnArray);
             }   
         }    
         else {
             console.log("Logged In = " + loggedin);
-            returnArray = [null, loggedin];
+            returnArray = [null, loggedin, null, null];
             console.log("Return Array = " + returnArray);
         } 
         console.log("returnArray = " + returnArray);  
@@ -242,6 +374,19 @@ function checkemail(err,connection,res,req,callback) {
         return callback(returnVar);
     });
 }
+        
+/**var insert = url.parse(req.url,true).query;
+var par = [insert.username, insert.password, insert.email, insert.admin];
+
+connection.query("INSERT INTO user (username, password, email, admin) VALUES (?,?,?,?)",par,function(err,rows){
+    connection.release();
+    if(err) {
+        res.json("Pass different params");
+    }   
+    if(!err) {
+        res.json(rows);
+    }       
+});**/
 
 function update_password(err,connection,res,req,callback) {
     console.log("update password");
@@ -249,6 +394,91 @@ function update_password(err,connection,res,req,callback) {
     var returnVar = [];
     var par = [password, email];
     connection.query("UPDATE user SET password = ? WHERE email = ?",par,function(err,rows){
+        connection.release();
+        if(!err) {
+            returnVar = 1;
+        } else {
+            returnVar = 0;
+        }
+        return callback(returnVar);
+    });
+}
+
+function createuser(err,connection,res,req,callback) {
+    console.log("check user");
+    var un = req.body.username;
+    var pw = 'updatesoon';
+    var e = req.body.email;
+    if(req.body.admin == "on") {
+        var a = 1;
+    } else {
+        var a = 0;
+    }
+    var returnVar = [];
+    var par = [un, pw, e, a];
+    connection.query("INSERT INTO user (username, password, email, admin) VALUES (?,?,?,?)",par,function(err,rows){
+        connection.release();
+        if(!err) {
+            returnVar = 1;
+        } else {
+            console.log(err);
+            returnVar = 0;
+        }
+        return callback(returnVar);
+    });
+}
+
+function updateduser(err,connection,res,req,aid,callback) {
+    console.log("check user");
+    var un = req.body.username;
+    var e = req.body.email;
+    if(req.body.admin == "on") {
+        var a = 1;
+    } else {
+        var a = 0;
+    }
+    var returnVar = [];
+    var par = [un, e, a, aid];
+    connection.query("UPDATE user (username, email, admin) VALUES (?,?,?) WHERE userid = ?",par,function(err,rows){
+        connection.release();
+        if(!err) {
+            returnVar = 1;
+        } else {
+            returnVar = 0;
+        }
+        return callback(returnVar);
+    });
+}
+
+function createsurvey(err,connection,res,req,callback) {
+    console.log("check user");
+    var a = req.body.alias;
+    var l = 0;
+    var ll = host_address + a;
+    var tl = host_address + a + "?testing=1";
+    var returnVar = [];
+    var par = [a, l, ll, tl, userid];
+    connection.query("INSERT INTO survey (surveyalias, live, livelink, testlink, userid) VALUES (?,?,?,?,?)",par,function(err,rows){
+        connection.release();
+        if(!err) {
+            returnVar = 1;
+        } else {
+            console.log(err);
+            returnVar = 0;
+        }
+        return callback(returnVar);
+    });
+}
+
+function updatesurvey(err,connection,res,req,sid,callback) {
+    console.log("check user");
+    var a = req.body.alias;
+    var sn = req.body.surveyname;
+    var ll = host_address + a;
+    var tl = host_address + a + "?testing=1";
+    var returnVar = [];
+    var par = [a, ll, tl, sid];
+    connection.query("UPDATE survey (surveyalias, livelink, testlink) VALUES (?,?,?) WHERE surveyid = ?",par,function(err,rows){
         connection.release();
         if(!err) {
             returnVar = 1;
