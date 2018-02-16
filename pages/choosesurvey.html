@@ -2,24 +2,24 @@
 <html>
     <head>
         <meta charset="UTF-8">
-        <title>Survey Builder - Delete Responses</title>
+        <title>Survey Builder - Choose Survey</title>
         <a href="/logout">Logout</a>
     </head>
     <body>
         <header>
             <h1>Survey Builder</h1>
-            <h2>Delete Responses</h2>
+            <h2>Choose Survey</h2>
         </header>
         <main>
-            <form action="/deleteresponseids" method="post">
+            <form action="/choosesurvey" method="post">
                 <div>
-                    <label>Enter responseid's seperated by a comma:</label>
-                    <textarea cols="40" rows="5" name="responseids">
-                    </textarea>
+                    <select name="survey">
+                        <option value="survey1">Survey 1</option>
+                    </select>
                 </div>
                 <div>
                     <div>
-                        <button type="submit">Save</button>
+                        <button type="submit">Edit</button>
                     </div>
                 </div>
             </form>

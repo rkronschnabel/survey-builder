@@ -11,7 +11,22 @@
             <h2>Survey Configuration</h2>
         </header>
         <main>
-
+            <form action="/surveyupdate" method="post">
+                <div>
+                    <label>Survey Name:</label>
+                    <input type="text" name="surveyname" required>
+                    <label>Survey Alias:</label>
+                    <input type="text" name="alias" required>
+                </div>
+                <div>
+                    <a href="#">Add Element</a>
+                </div>
+                <div>
+                    <div>
+                        <button type="submit">Save</button>
+                    </div>
+                </div>
+            </form>
         </main>
   
     </body>
