@@ -72,8 +72,34 @@ function handle_database(req,res) {
                 filename = "./pages/login.html";
                 show_page(filename,req,res);
             } else {
-                filename = "./pages/dashboard.html";
-                show_page(filename,req,res);
+                getsurveys(err,connection,res,req,function(result){
+                    returnedArray=result;
+                    var row = "";
+                    var table = "";
+                    for(i = 0; i < returnedArray.length; i++){
+                        row = "";
+                        row = '<tr><td>' + returnedArray[i].surveyalias + '</td>';
+                        if (returnedArray[i].live == 0){
+                            row = row + '<td>no</td>';
+                            row = row + '<td>' + returnedArray[i].livelink + '</td>';
+                        } else {
+                            row = row + '<td>yes</td>';
+                            row = row + '<td><a href="' + returnedArray[i].livelink + '">' + returnedArray[i].livelink + '</a></td>';
+                        }
+                        row = row + '<td><a href="' + returnedArray[i].testlink + '">' + returnedArray[i].testlink + '</a></td>';
+                        row = row + '<td><a href="' + host_address + 'survey' + returnedArray[i].surveyid + '">Edit</a></td>';
+                        row = row + '<td><a href="' + host_address + 'exportsurvey' + returnedArray[i].surveyid + '">Export</a></td><tr>'; 
+                        table = table + row;                            
+                    }
+                    console.log(table);
+                    if (returnedArray != null){
+                        filenames = [1,"./pages/dashboardtop.html",0,table,1,"./pages/dashboardbottom.html"];     
+                        readandadd(filenames,req,res,function(result){
+                            res.write(result);
+                            res.end();
+                        }); 
+                    }             
+                }); 
             }
         }  
 
@@ -140,6 +166,8 @@ function handle_database(req,res) {
         }
 
         if (q.pathname == "/login"){
+            console.log("req = " + req);
+            console.log("req.body = " + req.body);
             authenticate(err,connection,res,req,function(result){
                 authenticated = 0;
                 returnedArray=result;
@@ -148,11 +176,38 @@ function handle_database(req,res) {
                     userid=result[0];
                     administrator = result[2];
                     username = result[3];
-                    filename = "./pages/dashboard.html";
+                    getsurveys(err,connection,res,req,function(result){
+                        returnedArray=result;
+                        var row = "";
+                        var table = "";
+                        for(i = 0; i < returnedArray.length; i++){
+                            row = "";
+                            row = '<tr><td>' + returnedArray[i].surveyalias + '</td>';
+                            if (returnedArray[i].live == 0){
+                                row = row + '<td>no</td>';
+                                row = row + '<td>' + returnedArray[i].livelink + '</td>';
+                            } else {
+                                row = row + '<td>yes</td>';
+                                row = row + '<td><a href="' + returnedArray[i].livelink + '">' + returnedArray[i].livelink + '</a></td>';
+                            }
+                            row = row + '<td><a href="' + returnedArray[i].testlink + '">' + returnedArray[i].testlink + '</a></td>';
+                            row = row + '<td><a href="' + host_address + 'survey' + returnedArray[i].surveyid + '">Edit</a></td>';
+                            row = row + '<td><a href="' + host_address + 'exportsurvey' + returnedArray[i].surveyid + '">Export</a></td><tr>'; 
+                            table = table + row;                            
+                        }
+                        console.log(table);
+                        if (returnedArray != null){
+                            filenames = [1,"./pages/dashboardtop.html",0,table,1,"./pages/dashboardbottom.html"];     
+                            readandadd(filenames,req,res,function(result){
+                                res.write(result);
+                                res.end();
+                            }); 
+                        }             
+                    }); 
                 } else {
-                    filename = "./pages/login.html";          
+                    filename = "./pages/login.html";   
+                    show_page(filename,req,res);          
                 }
-                show_page(filename,req,res);   
             });
         }
 
@@ -262,7 +317,7 @@ function handle_database(req,res) {
                 });
             } else {
                 updatesurvey(err,connection,res,req,aid,function(result){
-                    returnedArray=result;
+                    returned=result;
                     if (returned == 1){
                         filename = "./pages/success.html";
                     } else {
@@ -274,8 +329,12 @@ function handle_database(req,res) {
         }
 
         
-        if (q.pathname == "/test.html"){
-            show_survey(err,connection,res);
+        if (q.pathname == "/test.html"){       
+            filenames = [1,"./pages/dashboardtop.html",0,username,1,"./pages/dashboardbottom.html"];     
+            readandadd(filenames,req,res,function(result){
+                res.write(result);
+                res.end();
+            });
         }
 
         /**connection.query("select * from user",function(err,rows){
@@ -309,7 +368,7 @@ function handle_database(req,res) {
 
 function show_user(err,connection,res) {
     console.log("show_user");
-    connection.query("select * from user",function(err,rows){
+    connection.query("select * from survey",function(err,rows){
         connection.release();
         if(!err) {
             res.json(rows);
@@ -334,7 +393,6 @@ function authenticate(err,connection,res,req,callback) {
     var loggedin = 0;
     var returnArray = [];
     connection.query("select * from user WHERE username=? AND password=?",[un,pswd],function(err,rows){
-        connection.release();
         if(!err & rows[0] != null) {             
             console.log(rows[0]);
             if (rows[0].username == un & rows[0].password == pswd) {
@@ -372,6 +430,21 @@ function checkemail(err,connection,res,req,callback) {
         }   
         console.log("returnVar = " + returnVar);
         return callback(returnVar);
+    });
+}
+
+function getsurveys(err,connection,res,req,callback) {
+    console.log("get surveys");
+    var returnArray = [];
+    connection.query("select * from survey WHERE userid=?",[userid],function(err,rows){
+        connection.release();
+        if(!err) {             
+            returnArray = rows; 
+        }    
+        else {
+            returnArray = [null];
+        }   
+        return callback(returnArray);
     });
 }
         
@@ -499,6 +572,24 @@ function show_page(fn,req,res){
         res.write(data);
         return res.end();
     });
+}
+
+function readandadd(fn,req,res,callback){
+    console.log("readandadd started")
+    var text = "";
+    l = fn.length;
+    for (i = 0; i < l; i++) {
+        if (fn[i] == 1){
+            i++;
+            text = text + fs.readFileSync(fn[i],'utf-8');
+        }
+        else if(fn[i] == 0){
+            i++;
+            text = text + fn[i];
+        }
+    }
+    console.log(text);
+    return callback(text);
 }
 
 app.all("*",function(req,res){
