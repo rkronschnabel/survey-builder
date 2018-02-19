@@ -1,5 +1,4 @@
 config.*
-*.sql
 survey-builder-test.js
 results*.txt
 surveybuilder*.html
