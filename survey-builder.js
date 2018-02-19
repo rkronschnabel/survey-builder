@@ -107,8 +107,8 @@ function handle_database(req,res) {
                             row = row + '<td><a href="' + returnedArray[i].livelink + '">' + returnedArray[i].livelink + '</a></td>';
                         }
                         row = row + '<td><a href="' + returnedArray[i].testlink + '">' + returnedArray[i].testlink + '</a></td>';
-                        row = row + '<td><a href="' + host_address + 'survey/' + returnedArray[i].surveyid + '">Edit</a></td>';
-                        row = row + '<td><a href="' + host_address + 'exportsurvey/' + returnedArray[i].surveyid + '">Export</a></td><tr>'; 
+                        row = row + '<td><a href="' + host_address + 'editsurvey?surveyid=' + returnedArray[i].surveyid + '">Edit</a></td>';
+                        row = row + '<td><a href="' + host_address + 'exportsurvey?surveyid=' + returnedArray[i].surveyid + '">Export</a></td><tr>'; 
                         table = table + row;                            
                     }
                     maincontent = maincontent + table;
@@ -307,8 +307,8 @@ function handle_database(req,res) {
                                 row = row + '<td><a href="' + returnedArray[i].livelink + '">' + returnedArray[i].livelink + '</a></td>';
                             }
                             row = row + '<td><a href="' + returnedArray[i].testlink + '">' + returnedArray[i].testlink + '</a></td>';
-                            row = row + '<td><a href="' + host_address + 'survey/' + returnedArray[i].surveyid + '">Edit</a></td>';
-                            row = row + '<td><a href="' + host_address + 'exportsurvey/' + returnedArray[i].surveyid + '">Export</a></td><tr>'; 
+                            row = row + '<td><a href="' + host_address + 'editsurvey?surveyid=' + returnedArray[i].surveyid + '">Edit</a></td>';
+                            row = row + '<td><a href="' + host_address + 'exportsurvey?surveyid=' + returnedArray[i].surveyid + '">Export</a></td><tr>'; 
                             table = table + row;                            
                         }
                         maincontent = maincontent + table;
@@ -639,14 +639,136 @@ function handle_database(req,res) {
             }); 
         }
 
+        if (q.pathname == "/editsurvey"){
+            surveyidselection = q.query.surveyid;
+            /**getsurvey(err,connection,res,req,function(result){
+                returnedArray=result;
+                var titletag = '<title>Survey Builder - Survey Configuration</title>';
+                var cssfiles = '';
+                var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>' + '<script>var qtagcounter = 0;var rocounter = 0;var idname = "";$(document).ready(function() {$("button[name=\'addelement\']").on("click", function(event){rocounter = 0;qtagcounter++;rocounter++;idname = "#container";var question = $(\'<div id="question\' + qtagcounter + \'" class="qlabel"><h3>Question \' + qtagcounter + \'</h3><input type="text" name="q\' + qtagcounter + \'" placeholder="Question \' + qtagcounter + \' text" required><div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$("#container").append(question);rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);idname = "#container";question = $(\'<div id="questionbutton\' + qtagcounter + \'_\' + rocounter + \'" class="questionbutton"><button value="generate new element" name="addro" type="button">Add Option</button></div>\');console.log(question);$(idname).append(question);});$("#container").on("click",\'button\', function(event){rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);});});</script>';
+                var headercontent = '<a href="/logout">Logout</a><h1>Survey Builder</h1><h2>Survey Configuration</h2>';
+                errormsg = errormsg + '<div class="errormsg"><p>Survey created!</p></div>';
+                var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div id="container"></div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
+                if (returnedArray != null){
+                    filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
+                    readandadd(filenames,req,res,function(result){
+                        res.write(result);
+                        res.end();
+                    }); 
+                }        
+            }); **/
+            if (returnedArray != null){
+                filenames = [1,"./surveytemplates/surveybuilder" + surveyidselection + ".html"];     
+                readandadd(filenames,req,res,function(result){
+                    res.write(result);
+                    res.end();
+                }); 
+            }    
+        }
+
+        if (q.pathname == "/exportsurvey"){
+            surveyidselection = q.query.surveyid;
+            getsurveyresults(err,connection,res,req,function(result){
+                returnedArray=result;
+                var content="";
+                var filename = 'results' + surveyidselection + '.txt';
+                var exportfile = './tmp/' + filename;
+                var keys = Object.keys(returnedArray[0]);
+                var row = "";
+                var keyname = "";
+                keyname = keys[0];
+                for(k = 0; k < keys.length; k++){
+                    keyname = keys[k];
+                    row = row + keyname;
+                    if(k != (keys.length - 1)){
+                        row = row + '\t';
+                    }
+
+                }
+                row = row + '\n';
+                content = content + row;
+                row = "";
+                for(i = 0; i < returnedArray.length; i++){
+                    for(x = 0; x < keys.length; x++){
+                        keyname = keys[x];
+                        row = row + returnedArray[i][keyname];
+                        if(x != (keys.length - 1)){
+                            row = row + '\t';
+                        }
+                    }
+                    row = row + '\n';
+                    content = content + row;
+                    row = "";
+                }
+                /**console.log(returnedArray);  
+                console.log("returnedArray[0] = ");  
+                console.log(returnedArray[0]);
+                console.log("keys = ");
+                console.log(Object.keys(returnedArray[0]));**/
+                fs.writeFile(exportfile, content, function (err) {
+                    if (err) throw err;
+                    console.log('Saved!');
+                    fs.exists(exportfile, function(exists){
+                        if(exists){
+                            res.writeHead(200, {
+                                "Content-Type": "application/octet-stream",
+                                "Content-Disposition": "attachment; filename=" + filename
+                                });
+                                fs.createReadStream(exportfile).pipe(res);
+                                getsurveys(err,connection,res,req,function(result){
+                                    returnedArray=result;
+                                    var titletag = '<title>Survey Builder - Dashboard</title>';
+                                    var cssfiles = '';
+                                    var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>';
+                                    var headercontent = '<a href="/logout">Logout</a><h1>Survey Builder</h1><h2>Dashboard</h2>';
+                                    var errormsg = '<div class="errormsg"><p>The file has been exported.</p></div>';
+                                    var maincontent = errormsg + '<div><a href="/admin">Admin</a></div><div><a href="/newsurvey">+ New Survey</a></div><div><table><tr><td>Survey Name</td><td>Live</td><td>Link</td><td>Test Link</td><td>Edit</td><td>Export</td></tr>';
+                                    var row = "";
+                                    var table = "";
+                                    for(i = 0; i < returnedArray.length; i++){
+                                        row = "";
+                                        row = '<tr><td>' + returnedArray[i].surveyalias + '</td>';
+                                        if (returnedArray[i].live == 0){
+                                            row = row + '<td>no</td>';
+                                            row = row + '<td>' + returnedArray[i].livelink + '</td>';
+                                        } else {
+                                            row = row + '<td>yes</td>';
+                                            row = row + '<td><a href="' + returnedArray[i].livelink + '">' + returnedArray[i].livelink + '</a></td>';
+                                        }
+                                        row = row + '<td><a href="' + returnedArray[i].testlink + '">' + returnedArray[i].testlink + '</a></td>';
+                                        row = row + '<td><a href="' + host_address + 'editsurvey?surveyid=' + returnedArray[i].surveyid + '">Edit</a></td>';
+                                        row = row + '<td><a href="' + host_address + 'exportsurvey?surveyid=' + returnedArray[i].surveyid + '">Export</a></td><tr>'; 
+                                        table = table + row;                            
+                                    }
+                                    maincontent = maincontent + table;
+                                    maincontent = maincontent + '</table></div>';
+                
+                                    console.log(table);
+                                    if (returnedArray != null){
+                                        filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
+                                        readandadd(filenames,req,res,function(result){
+                                            res.write(result);
+                                            res.end();
+                                        }); 
+                                    }              
+                                }); 
+                        } else {
+                            res.writeHead(400, {"Content-Type": "text/plain"});
+                            res.end("ERROR File does not exist");
+                          }
+                    });
+                  }); 
+            }); 
+        }
+
         if (q.pathname == "/newsurvey"){
             surveyidselection = null; 
             var titletag = '<title>Survey Builder - Survey Configuration</title>';
             var cssfiles = '';
-            var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>';
+            var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>' + '<script>var qtagcounter = 0;var rocounter = 0;var idname = "";$(document).ready(function() {$("button[name=\'addelement\']").on("click", function(event){rocounter = 0;qtagcounter++;rocounter++;idname = "#container";var question = $(\'<div id="question\' + qtagcounter + \'" class="qlabel"><h3>Question \' + qtagcounter + \'</h3><input type="text" name="q\' + qtagcounter + \'" placeholder="Question \' + qtagcounter + \' text" required><div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$("#container").append(question);rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);idname = "#container";question = $(\'<div id="questionbutton\' + qtagcounter + \'_\' + rocounter + \'" class="questionbutton"><button value="generate new element" name="addro" type="button">Add Option</button></div>\');console.log(question);$(idname).append(question);});$("#container").on("click",\'button\', function(event){rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);});});</script>';
             var headercontent = '<a href="/logout">Logout</a><h1>Survey Builder</h1><h2>Survey Configuration</h2>';
             var errormsg = '';
-            var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" required></div><div><a href="#">Add Element</a></div><div><div><button type="submit">Save</button></div></div></form>';
+            var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" required></div><div id="container"></div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
             if (returnedArray != null){
                 filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
                 readandadd(filenames,req,res,function(result){
@@ -657,15 +779,79 @@ function handle_database(req,res) {
         }
 
         if (q.pathname == "/surveyupdate"){
-            console.log("Admin User Id = " + adminuserid)
+            console.log(req.body);
+            console.log('---------length---------');
+            console.log(Object.keys(req.body).length);
+            var headercontent = '<a href="/logout">Logout</a><h1>Survey Builder</h1><h2>Survey Configuration</h2>';
+            var keys = Object.keys(req.body);
+            var keyname = "";
+            keyname = keys[0];
+            var firstchar = "";
+            console.log('---------keyname---------');
+            console.log(keyname);
+            console.log('---------length---------');
+            console.log(keyname.length);
+            var questionarray = [];
+            var arraycounter = 0;
+            var optioncounter = 0;
+            var questionscontent = "";
+            for(i = 0; i < keys.length; i++){
+                keyname=keys[i];
+                firstchar = keyname.charAt(0);
+                console.log('---------keyname loop---------');
+                console.log(keyname);
+                console.log(keyname.charAt(0));
+                console.log(firstchar);
+                if(firstchar==='q'){
+                    questionarray[arraycounter] = keyname;
+                    if(arraycounter != 0){
+                        questionscontent = questionscontent + '</div>\n';
+                    }
+                    questionscontent = questionscontent + '<div id="' + (arraycounter + 1) + '" class="qlabel">\n';
+                    questionscontent = questionscontent + '<h3>Question ' + (arraycounter + 1) + '</h3>\n';
+                    questionscontent = questionscontent + '<input type="text" name=q' + (arraycounter + 1) + '" value="' + req.body[keyname] + '" required>\n';
+
+                    arraycounter++;
+                    optioncounter = 0;
+                }
+                if(firstchar==='o'){
+                    optioncounter++
+                    questionscontent = questionscontent + '<div id="responseoption' + (arraycounter + 1) + '_' + optioncounter + '" class="responseoptions">\n';
+                    questionscontent = questionscontent + '<input type="text" name="' + keyname + '" value="' + req.body[keyname] + '" required">\n';
+                    questionscontent = questionscontent + '</div>\n';
+
+                }
+            }
+            questionscontent = questionscontent + '</div>\n';
+            /**var addoptionbutton = '';
+            addoptionbutton = addoptionbutton + '<div id="questionbutton' + arraycounter + '_' + optioncounter + '" class="questionbutton">\n';
+            addoptionbutton = addoptionbutton + '<button value="" name="addro" type="button">Add Option</button>\n';
+            addoptionbutton = addoptionbutton + '</div>\n';**/
+
+
+            console.log('---------questioncontent---------');
+            console.log(questionscontent);
+            console.log('---------questionarray---------');
+            console.log(questionarray);
+            var titletag = '<title>Survey Builder - Survey Configuration</title>';
+            var cssfiles = '';
+            var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>' + '<script>var qtagcounter = ' + arraycounter + ';var rocounter = ' + optioncounter + ';var idname = "";$(document).ready(function() {$("button[name=\'addelement\']").on("click", function(event){rocounter = 0;qtagcounter++;rocounter++;idname = "#container";var question = $(\'<div id="question\' + qtagcounter + \'" class="qlabel"><h3>Question \' + qtagcounter + \'</h3><input type="text" name="q\' + qtagcounter + \'" placeholder="Question \' + qtagcounter + \' text" required><div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$("#container").append(question);rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);idname = "#container";question = $(\'<div id="questionbutton\' + qtagcounter + \'_\' + rocounter + \'" class="questionbutton"><button value="generate new element" name="addro" type="button">Add Option</button></div>\');console.log(question);$(idname).append(question);});$("#container").on("click",\'button\', function(event){rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);});});</script>';
             if (surveyidselection == null) {
                 createsurvey(err,connection,res,req,function(result){
                     returned=result;
                     if (returned != null){
                         surveyidselection = returned[0].insertId;
+                        var filename = 'surveybuilder' + surveyidselection + '.html';
+                        var exportfile = './surveytemplates/' + filename;
                         var tablename = "responses" + surveyidselection;
                         var errormsg = '';
-                        connection.query("CREATE TABLE ?? (responseid INT AUTO_INCREMENT PRIMARY KEY, starttime DATETIME DEFAULT CURRENT_TIMESTAMP, finishtime DATETIME, lastmod DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,surveyid INT NOT NULL DEFAULT ?)",[tablename,userid],function(err,rows){
+                        var parameters = []
+                        var sql = 'CREATE TABLE ' + tablename + '(responseid INT AUTO_INCREMENT PRIMARY KEY, starttime DATETIME DEFAULT CURRENT_TIMESTAMP, finishtime DATETIME, lastmod DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP, surveyid INT NOT NULL DEFAULT ' + userid;
+                        for(i = 0; i < arraycounter; i++){
+                            sql = sql + ', ' + questionarray[i] + ' INT';
+                        }
+                        sql = sql + ')';
+                        connection.query(sql,function(err,rows){
                             if(!err) {
                                 errormsg = '';
                             } else {
@@ -675,27 +861,25 @@ function handle_database(req,res) {
                         });
                         getsurvey(err,connection,res,req,function(result){
                             returnedArray=result;
-                            var titletag = '<title>Survey Builder - Survey Configuration</title>';
-                            var cssfiles = '';
-                            var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>';
-                            var headercontent = '<a href="/logout">Logout</a><h1>Survey Builder</h1><h2>Survey Configuration</h2>';
                             errormsg = errormsg + '<div class="errormsg"><p>Survey created!</p></div>';
-                            var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div><a href="#">Add Element</a></div><div><div><button type="submit">Save</button></div></div></form>';
+                            var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div id="container">' + questionscontent + '</div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
+
                             if (returnedArray != null){
                                 filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
                                 readandadd(filenames,req,res,function(result){
+                                    fs.writeFile(exportfile, result, function (err) {
+                                        if (err) throw err;
+                                        console.log('File written!');
+                                    });
                                     res.write(result);
                                     res.end();
                                 }); 
                             }        
                         }); 
                     } else {
-                        var titletag = '<title>Survey Builder - Survey Configuration</title>';
-                        var cssfiles = '';
-                        var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>';
-                        var headercontent = '<a href="/logout">Logout</a><h1>Survey Builder</h1><h2>Survey Configuration</h2>';
+                        var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>' + '<script>var qtagcounter = 0;var rocounter = 0;var idname = "";$(document).ready(function() {$("button[name=\'addelement\']").on("click", function(event){rocounter = 0;qtagcounter++;rocounter++;idname = "#container";var question = $(\'<div id="question\' + qtagcounter + \'" class="qlabel"><h3>Question \' + qtagcounter + \'</h3><input type="text" name="q\' + qtagcounter + \'" placeholder="Question \' + qtagcounter + \' text" required><div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$("#container").append(question);rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);idname = "#container";question = $(\'<div id="questionbutton\' + qtagcounter + \'_\' + rocounter + \'" class="questionbutton"><button value="generate new element" name="addro" type="button">Add Option</button></div>\');console.log(question);$(idname).append(question);});$("#container").on("click",\'button\', function(event){rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);});});</script>';
                         var errormsg = '<div class="errormsg"><p>Survey creation failed, try a different Name.</p></div>';
-                        var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" required></div><div><a href="#">Add Element</a></div><div><div><button type="submit">Save</button></div></div></form>';
+                        var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" required></div><div id="container"></div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
                         if (returnedArray != null){
                             filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
                             readandadd(filenames,req,res,function(result){
@@ -708,39 +892,43 @@ function handle_database(req,res) {
             } else {
                 updatesurvey(err,connection,res,req,function(result){
                     returned=result;
+                    var filename = 'surveybuilder' + surveyidselection + '.html';
+                    var exportfile = './surveytemplates/' + filename;
                     if (returned == 1){
                         getsurvey(err,connection,res,req,function(result){
                             returnedArray=result;
-                            var titletag = '<title>Survey Builder - Survey Configuration</title>';
-                            var cssfiles = '';
-                            var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>';
-                            var headercontent = '<a href="/logout">Logout</a><h1>Survey Builder</h1><h2>Survey Configuration</h2>';
                             var errormsg = '<div class="errormsg"><p>Survey updated!</p></div>';
-                            var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div><a href="#">Add Element</a></div><div><div><button type="submit">Save</button></div></div></form>';
+                            var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div id="container">' + questionscontent + '</div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
+
                             if (returnedArray != null){
                                 filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
                                 readandadd(filenames,req,res,function(result){
+                                    fs.writeFile(exportfile, result, function (err) {
+                                        if (err) throw err;
+                                        console.log('File written!');
+                                    });
                                     res.write(result);
                                     res.end();
                                 }); 
-                            }        
-                        });
+                            }          
+                        });  
                     } else {
                         getsurvey(err,connection,res,req,function(result){
                             returnedArray=result;
-                            var titletag = '<title>Survey Builder - Survey Configuration</title>';
-                            var cssfiles = '';
-                            var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>';
-                            var headercontent = '<a href="/logout">Logout</a><h1>Survey Builder</h1><h2>Survey Configuration</h2>';
                             var errormsg = '<div class="errormsg"><p>Survey update failed, try a different Name.</p></div>';
-                            var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div><a href="#">Add Element</a></div><div><div><button type="submit">Save</button></div></div></form>';
+                            var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div id="container">' + questionscontent + '</div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
+
                             if (returnedArray != null){
                                 filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
                                 readandadd(filenames,req,res,function(result){
+                                    fs.writeFile(exportfile, result, function (err) {
+                                        if (err) throw err;
+                                        console.log('File written!');
+                                    });
                                     res.write(result);
                                     res.end();
                                 }); 
-                            }        
+                            }          
                         });
                     }
                 });
@@ -900,6 +1088,21 @@ function getsurvey(err,connection,res,req,callback) {
         if(!err) {             
             console.log("rows = "); 
             console.log(rows);
+            returnArray = rows; 
+        }    
+        else {
+            returnArray = [null];
+        }   
+        return callback(returnArray);
+    });
+}
+
+function getsurveyresults(err,connection,res,req,callback) {
+    console.log("get survey info");
+    var returnArray = [];
+    var sqlquery = 'select * from responses' + surveyidselection;
+    connection.query(sqlquery,function(err,rows){
+        if(!err) {            
             returnArray = rows; 
         }    
         else {
