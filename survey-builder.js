@@ -669,10 +669,12 @@ function handle_database(req,res) {
         if (q.pathname == "/exportsurvey"){
             surveyidselection = q.query.surveyid;
             getsurveyresults(err,connection,res,req,function(result){
+                console.log('getsurveyresults finished!');
                 returnedArray=result;
                 var content="";
-                var filename = 'results' + surveyidselection + '.txt';
-                var exportfile = './tmp/' + filename;
+                var responsefilename = 'results' + surveyidselection + '.txt';
+                var exportfile = './tmp/' + responsefilename;
+                var downloadfilepath = '/tmp/' + responsefilename;
                 var keys = Object.keys(returnedArray[0]);
                 var row = "";
                 var keyname = "";
@@ -700,58 +702,18 @@ function handle_database(req,res) {
                     content = content + row;
                     row = "";
                 }
-                /**console.log(returnedArray);  
-                console.log("returnedArray[0] = ");  
-                console.log(returnedArray[0]);
-                console.log("keys = ");
-                console.log(Object.keys(returnedArray[0]));**/
                 fs.writeFile(exportfile, content, function (err) {
                     if (err) throw err;
                     console.log('Saved!');
                     fs.exists(exportfile, function(exists){
+                        console.log('exists finished!');
                         if(exists){
-                            res.writeHead(200, {
-                                "Content-Type": "application/octet-stream",
-                                "Content-Disposition": "attachment; filename=" + filename
-                                });
-                                fs.createReadStream(exportfile).pipe(res);
-                                getsurveys(err,connection,res,req,function(result){
-                                    returnedArray=result;
-                                    var titletag = '<title>Survey Builder - Dashboard</title>';
-                                    var cssfiles = '';
-                                    var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>';
-                                    var headercontent = '<a href="/logout">Logout</a><h1>Survey Builder</h1><h2>Dashboard</h2>';
-                                    var errormsg = '<div class="errormsg"><p>The file has been exported.</p></div>';
-                                    var maincontent = errormsg + '<div><a href="/admin">Admin</a></div><div><a href="/newsurvey">+ New Survey</a></div><div><table><tr><td>Survey Name</td><td>Live</td><td>Link</td><td>Test Link</td><td>Edit</td><td>Export</td></tr>';
-                                    var row = "";
-                                    var table = "";
-                                    for(i = 0; i < returnedArray.length; i++){
-                                        row = "";
-                                        row = '<tr><td>' + returnedArray[i].surveyalias + '</td>';
-                                        if (returnedArray[i].live == 0){
-                                            row = row + '<td>no</td>';
-                                            row = row + '<td>' + returnedArray[i].livelink + '</td>';
-                                        } else {
-                                            row = row + '<td>yes</td>';
-                                            row = row + '<td><a href="' + returnedArray[i].livelink + '">' + returnedArray[i].livelink + '</a></td>';
-                                        }
-                                        row = row + '<td><a href="' + returnedArray[i].testlink + '">' + returnedArray[i].testlink + '</a></td>';
-                                        row = row + '<td><a href="' + host_address + 'editsurvey?surveyid=' + returnedArray[i].surveyid + '">Edit</a></td>';
-                                        row = row + '<td><a href="' + host_address + 'exportsurvey?surveyid=' + returnedArray[i].surveyid + '">Export</a></td><tr>'; 
-                                        table = table + row;                            
-                                    }
-                                    maincontent = maincontent + table;
-                                    maincontent = maincontent + '</table></div>';
-                
-                                    console.log(table);
-                                    if (returnedArray != null){
-                                        filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
-                                        readandadd(filenames,req,res,function(result){
-                                            res.write(result);
-                                            res.end();
-                                        }); 
-                                    }              
-                                }); 
+                        res.writeHead(200, {
+                        "Content-Type": "application/octet-stream",
+                        "Content-Disposition": "attachment; filename=" + responsefilename
+                        });
+                        res.write(content);
+                        res.end();
                         } else {
                             res.writeHead(400, {"Content-Type": "text/plain"});
                             res.end("ERROR File does not exist");
