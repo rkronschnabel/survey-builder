@@ -70,6 +70,33 @@ function handle_database(req,res) {
         var filenames = [];
         console.log("filename = " + filename);  
 
+        alteredpath = "";
+
+        console.log("New Entrance");
+        for(i = 1; i < q.pathname.length; i++){
+            console.log("q.pathname");
+            console.log(q.pathname);
+            alteredpath = alteredpath + q.pathname.charAt(i);
+            console.log("Altered Path");
+            console.log(alteredpath);
+        }
+        var displaysurveyid = null;
+        getsurveysidbyalias(err,connection,res,req,function(result){
+            returnedArray=result;
+            if(returnedArray[0] != null){
+                var titletag = '<title>Survey ' + alteredpath +  '</title>';
+                var cssfiles = '';
+                var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>';
+                var headercontent = '<h1>' + alteredpath +  '</h1>';
+                displaysurveyid = returnedArray[0].surveyid;
+                filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",1,"./surveytemplates" + q.pathname + ".html",1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
+                readandadd(filenames,req,res,function(result){
+                    res.write(result);
+                    res.end();
+                }); 
+            } 
+        });
+
         if (q.pathname == "/"){
             if(authenticated == 0){
                 var titletag = '<title>Survey Builder - Login</title>';
@@ -745,6 +772,8 @@ function handle_database(req,res) {
             console.log('---------length---------');
             console.log(Object.keys(req.body).length);
             var headercontent = '<a href="/logout">Logout</a><h1>Survey Builder</h1><h2>Survey Configuration</h2>';
+            var headercontentsurvey = '<a href="/logout">Logout</a><h1>Survey</h1>';
+            var titletagsurvey = '<title>Survey</title>';
             var keys = Object.keys(req.body);
             var keyname = "";
             keyname = keys[0];
@@ -757,22 +786,23 @@ function handle_database(req,res) {
             var arraycounter = 0;
             var optioncounter = 0;
             var questionscontent = "";
+            var questionname = "";
+            surveyscontent = "";
             for(i = 0; i < keys.length; i++){
                 keyname=keys[i];
                 firstchar = keyname.charAt(0);
-                console.log('---------keyname loop---------');
-                console.log(keyname);
-                console.log(keyname.charAt(0));
-                console.log(firstchar);
                 if(firstchar==='q'){
                     questionarray[arraycounter] = keyname;
                     if(arraycounter != 0){
                         questionscontent = questionscontent + '</div>\n';
+                        surveyscontent = surveyscontent + '</fieldset>\n</div>\n';
                     }
                     questionscontent = questionscontent + '<div id="' + (arraycounter + 1) + '" class="qlabel">\n';
                     questionscontent = questionscontent + '<h3>Question ' + (arraycounter + 1) + '</h3>\n';
                     questionscontent = questionscontent + '<input type="text" name=q' + (arraycounter + 1) + '" value="' + req.body[keyname] + '" required>\n';
-
+                    surveyscontent = surveyscontent + '<div class="questionbox">\n<fieldset>\n<legend>' + req.body[keyname] + '</legend>';
+                    
+                    questionname = keyname;
                     arraycounter++;
                     optioncounter = 0;
                 }
@@ -781,10 +811,13 @@ function handle_database(req,res) {
                     questionscontent = questionscontent + '<div id="responseoption' + (arraycounter + 1) + '_' + optioncounter + '" class="responseoptions">\n';
                     questionscontent = questionscontent + '<input type="text" name="' + keyname + '" value="' + req.body[keyname] + '" required">\n';
                     questionscontent = questionscontent + '</div>\n';
+                    surveyscontent = surveyscontent + '<label for="' + keyname + '">' + req.body[keyname] + '</label>\n';
+                    surveyscontent = surveyscontent + '<input type="radio" name="' + questionname + '" id="' + keyname + '" value="' + optioncounter + '">\n';
 
                 }
             }
             questionscontent = questionscontent + '</div>\n';
+            surveyscontent = surveyscontent + '</fieldset>\n</div>\n';
             /**var addoptionbutton = '';
             addoptionbutton = addoptionbutton + '<div id="questionbutton' + arraycounter + '_' + optioncounter + '" class="questionbutton">\n';
             addoptionbutton = addoptionbutton + '<button value="" name="addro" type="button">Add Option</button>\n';
@@ -795,6 +828,8 @@ function handle_database(req,res) {
             console.log(questionscontent);
             console.log('---------questionarray---------');
             console.log(questionarray);
+            console.log('---------surveyscontent---------');
+            console.log(surveyscontent);
             var titletag = '<title>Survey Builder - Survey Configuration</title>';
             var cssfiles = '';
             var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>' + '<script>var qtagcounter = ' + arraycounter + ';var rocounter = ' + optioncounter + ';var idname = "";$(document).ready(function() {$("button[name=\'addelement\']").on("click", function(event){rocounter = 0;qtagcounter++;rocounter++;idname = "#container";var question = $(\'<div id="question\' + qtagcounter + \'" class="qlabel"><h3>Question \' + qtagcounter + \'</h3><input type="text" name="q\' + qtagcounter + \'" placeholder="Question \' + qtagcounter + \' text" required><div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$("#container").append(question);rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);idname = "#container";question = $(\'<div id="questionbutton\' + qtagcounter + \'_\' + rocounter + \'" class="questionbutton"><button value="generate new element" name="addro" type="button">Add Option</button></div>\');console.log(question);$(idname).append(question);});$("#container").on("click",\'button\', function(event){rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);});});</script>';
@@ -823,8 +858,15 @@ function handle_database(req,res) {
                         });
                         getsurvey(err,connection,res,req,function(result){
                             returnedArray=result;
+                            var filenamesurvey = returnedArray[0].surveyalias + '.html';
+                            var exportfilesurvey = './surveytemplates/' + filenamesurvey;
+                            var maincontentsurvey = '<form action="/survey' + surveyidselection + '" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div id="surveycontainer">' + surveyscontent + '</div><div><div><button type="submit">Submit Survey</button></div></div></form>';
                             errormsg = errormsg + '<div class="errormsg"><p>Survey created!</p></div>';
                             var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div id="container">' + questionscontent + '</div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
+                            fs.writeFile(exportfilesurvey, maincontentsurvey, function (err) {
+                                if (err) throw err;
+                                console.log('Survey file written!');
+                            });
 
                             if (returnedArray != null){
                                 filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
@@ -859,8 +901,15 @@ function handle_database(req,res) {
                     if (returned == 1){
                         getsurvey(err,connection,res,req,function(result){
                             returnedArray=result;
+                            var filenamesurvey = returnedArray[0].surveyalias + '.html';
+                            var exportfilesurvey = './surveytemplates/' + filenamesurvey;
+                            var maincontentsurvey = '<form action="/survey' + surveyidselection + '" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div id="surveycontainer">' + surveyscontent + '</div><div><div><button type="submit">Submit Survey</button></div></div></form>';
                             var errormsg = '<div class="errormsg"><p>Survey updated!</p></div>';
                             var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div id="container">' + questionscontent + '</div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
+                            fs.writeFile(exportfilesurvey, maincontentsurvey, function (err) {
+                                if (err) throw err;
+                                console.log('Survey file written!');
+                            });
 
                             if (returnedArray != null){
                                 filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
@@ -980,6 +1029,26 @@ function getsurveys(err,connection,res,req,callback) {
             returnArray = rows; 
         }    
         else {
+            returnArray = [null];
+        }   
+        return callback(returnArray);
+    });
+}
+
+function getsurveysidbyalias(err,connection,res,req,callback) {
+    console.log("getsurveysidbyalias");
+    console.log("Altered Path");
+    console.log(alteredpath);
+    var returnArray = [];
+    connection.query("select surveyid from survey WHERE surveyalias=?",[alteredpath],function(err,rows){
+        if(!err & rows[0] != null) {      
+            console.log("rows");
+            console.log(rows);
+            console.log(rows[0]);  
+            console.log(rows[0].surveyid);      
+            returnArray = rows; 
+        }    
+        else {    
             returnArray = [null];
         }   
         return callback(returnArray);
