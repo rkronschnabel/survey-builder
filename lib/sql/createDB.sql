@@ -33,6 +33,6 @@ CREATE TABLE survey (
     );
 
 INSERT INTO user (username, password, email, admin) VALUES
-('admin','PLEASECHANGESOON','enteryouremailhere',1)
+('admin','ABC123','enteryouremailhere',1)
 ;
 
