@@ -84,18 +84,114 @@ function handle_database(req,res) {
         getsurveysidbyalias(err,connection,res,req,function(result){
             returnedArray=result;
             if(returnedArray[0] != null){
-                var titletag = '<title>Survey ' + alteredpath +  '</title>';
-                var cssfiles = '';
-                var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>';
-                var headercontent = '<h1>' + alteredpath +  '</h1>';
                 displaysurveyid = returnedArray[0].surveyid;
-                filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",1,"./surveytemplates" + q.pathname + ".html",1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
+                if(returnedArray[0].live == 1 || q.query.testing == 1){
+                    var titletag = '<title>Survey ' + alteredpath +  '</title>';
+                    var cssfiles = '';
+                    var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>';
+                    if(q.query.testing == 1){
+                        scripting = scripting + '<script>$(document).ready(function() {$("#surveysubmit").attr("action", "/testsurveycompletion");});</script>';
+                    }
+                    var headercontent = '<h1>' + alteredpath +  '</h1>';
+                    filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",1,"./surveytemplates" + q.pathname + ".html",1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
+                    readandadd(filenames,req,res,function(result){
+                        res.write(result);
+                        res.end();
+                    }); 
+                } else {
+                    var titletag = '<title>Survey ' + alteredpath +  '</title>';
+                    var cssfiles = '';
+                    var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>';
+                    var headercontent = '<h1>' + alteredpath +  ' Survey</h1>';
+                    var maincontent = '<h2>' + alteredpath +  ' is not live yet!</h2>';
+                    filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
+                    readandadd(filenames,req,res,function(result){
+                        res.write(result);
+                        res.end();
+                    }); 
+                }
+            } 
+        });
+
+        if (q.pathname == "/surveysubmit"){
+            surveyidselection = q.query.surveyid;
+            var keys = Object.keys(req.body);
+            var keyname = "";
+            var sql = 'INSERT INTO responses' + surveyidselection + ' (finishtime';
+            for(i=0; i < keys.length; i++){
+                console.log(keys[i]);
+                sql = sql + ',';
+                sql = sql + keys[i];
+            }
+            sql = sql + ') VALUES (NOW()';
+            for(i=0; i < keys.length; i++){
+                keyname = keys[i];
+                console.log(keyname);
+                sql = sql + ',';
+                sql = sql + req.body[keyname];
+            }
+            sql = sql + ')';
+            console.log('---------------------------------------');
+            console.log('-----------SURVEYSUBMIT VARS-----------');
+            console.log('---------------------------------------');
+            console.log(sql);
+            getsurvey(err,connection,res,req,function(result){ 
+                connection.query(sql,function(err,rows){
+                    if(!err) {
+                        errormsg = '';
+                    } else {
+                        console.log(err);
+                        errormsg = '<div class="errormsg"><p>Failed to create response table</p></div>';
+                    }
+                });
+                returnedArray=result;
+                if(returnedArray[0].live == 1){
+                    var titletag = '<title>Survey Completed</title>';
+                    var cssfiles = '';
+                    var scripting = '';
+                    var headercontent = '<h1>Survey Complete!</h2>';
+                    var errormsg = '';
+                    var maincontent = errormsg + '<p>Thank you for completing the survey!</p>';
+                    if (returnedArray != null){
+                        filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
+                        readandadd(filenames,req,res,function(result){
+                            res.write(result);
+                            res.end();
+                        }); 
+                    }  
+                } else {
+                    var titletag = '<title>Survey Is Not Live</title>';
+                    var cssfiles = '';
+                    var scripting = '';
+                    var headercontent = '<h1>Survey Is Not Live</h2>';
+                    var errormsg = '';
+                    var maincontent = errormsg + '<p>This survey is still being tested, no data was recorded.</p>';
+                    if (returnedArray != null){
+                        filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
+                        readandadd(filenames,req,res,function(result){
+                            res.write(result);
+                            res.end();
+                        }); 
+                    }  
+                }
+            });   
+        }
+
+        if (q.pathname == "/testsurveycompletion"){
+            var titletag = '<title>Survey Is Not Live</title>';
+            var cssfiles = '';
+            var scripting = '';
+            var headercontent = '<h1>Survey Is Not Live</h2>';
+            var errormsg = '';
+            var maincontent = errormsg + '<p>This survey is still being tested, no data was recorded.</p>';
+            if (returnedArray != null){
+                filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
                 readandadd(filenames,req,res,function(result){
                     res.write(result);
                     res.end();
                 }); 
-            } 
-        });
+            }  
+        }  
 
         if (q.pathname == "/"){
             if(authenticated == 0){
@@ -126,12 +222,12 @@ function handle_database(req,res) {
                     for(i = 0; i < returnedArray.length; i++){
                         row = "";
                         row = '<tr><td>' + returnedArray[i].surveyalias + '</td>';
-                        if (returnedArray[i].live == 0){
-                            row = row + '<td>no</td>';
-                            row = row + '<td>' + returnedArray[i].livelink + '</td>';
-                        } else {
+                        if (returnedArray[i].live == 1){
                             row = row + '<td>yes</td>';
                             row = row + '<td><a href="' + returnedArray[i].livelink + '">' + returnedArray[i].livelink + '</a></td>';
+                        } else {
+                            row = row + '<td>no</td>';
+                            row = row + '<td>' + returnedArray[i].livelink + '</td>';
                         }
                         row = row + '<td><a href="' + returnedArray[i].testlink + '">' + returnedArray[i].testlink + '</a></td>';
                         row = row + '<td><a href="' + host_address + 'editsurvey?surveyid=' + returnedArray[i].surveyid + '">Edit</a></td>';
@@ -326,12 +422,12 @@ function handle_database(req,res) {
                         for(i = 0; i < returnedArray.length; i++){
                             row = "";
                             row = '<tr><td>' + returnedArray[i].surveyalias + '</td>';
-                            if (returnedArray[i].live == 0){
-                                row = row + '<td>no</td>';
-                                row = row + '<td>' + returnedArray[i].livelink + '</td>';
-                            } else {
+                            if (returnedArray[i].live == 1){
                                 row = row + '<td>yes</td>';
                                 row = row + '<td><a href="' + returnedArray[i].livelink + '">' + returnedArray[i].livelink + '</a></td>';
+                            } else {
+                                row = row + '<td>no</td>';
+                                row = row + '<td>' + returnedArray[i].livelink + '</td>';
                             }
                             row = row + '<td><a href="' + returnedArray[i].testlink + '">' + returnedArray[i].testlink + '</a></td>';
                             row = row + '<td><a href="' + host_address + 'editsurvey?surveyid=' + returnedArray[i].surveyid + '">Edit</a></td>';
@@ -668,22 +764,6 @@ function handle_database(req,res) {
 
         if (q.pathname == "/editsurvey"){
             surveyidselection = q.query.surveyid;
-            /**getsurvey(err,connection,res,req,function(result){
-                returnedArray=result;
-                var titletag = '<title>Survey Builder - Survey Configuration</title>';
-                var cssfiles = '';
-                var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>' + '<script>var qtagcounter = 0;var rocounter = 0;var idname = "";$(document).ready(function() {$("button[name=\'addelement\']").on("click", function(event){rocounter = 0;qtagcounter++;rocounter++;idname = "#container";var question = $(\'<div id="question\' + qtagcounter + \'" class="qlabel"><h3>Question \' + qtagcounter + \'</h3><input type="text" name="q\' + qtagcounter + \'" placeholder="Question \' + qtagcounter + \' text" required><div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$("#container").append(question);rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);idname = "#container";question = $(\'<div id="questionbutton\' + qtagcounter + \'_\' + rocounter + \'" class="questionbutton"><button value="generate new element" name="addro" type="button">Add Option</button></div>\');console.log(question);$(idname).append(question);});$("#container").on("click",\'button\', function(event){rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);});});</script>';
-                var headercontent = '<a href="/logout">Logout</a><h1>Survey Builder</h1><h2>Survey Configuration</h2>';
-                errormsg = errormsg + '<div class="errormsg"><p>Survey created!</p></div>';
-                var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div id="container"></div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
-                if (returnedArray != null){
-                    filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
-                    readandadd(filenames,req,res,function(result){
-                        res.write(result);
-                        res.end();
-                    }); 
-                }        
-            }); **/
             if (returnedArray != null){
                 filenames = [1,"./surveytemplates/surveybuilder" + surveyidselection + ".html"];     
                 readandadd(filenames,req,res,function(result){
@@ -757,7 +837,7 @@ function handle_database(req,res) {
             var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>' + '<script>var qtagcounter = 0;var rocounter = 0;var idname = "";$(document).ready(function() {$("button[name=\'addelement\']").on("click", function(event){rocounter = 0;qtagcounter++;rocounter++;idname = "#container";var question = $(\'<div id="question\' + qtagcounter + \'" class="qlabel"><h3>Question \' + qtagcounter + \'</h3><input type="text" name="q\' + qtagcounter + \'" placeholder="Question \' + qtagcounter + \' text" required><div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$("#container").append(question);rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);idname = "#container";question = $(\'<div id="questionbutton\' + qtagcounter + \'_\' + rocounter + \'" class="questionbutton"><button value="generate new element" name="addro" type="button">Add Option</button></div>\');console.log(question);$(idname).append(question);});$("#container").on("click",\'button\', function(event){rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);});});</script>';
             var headercontent = '<a href="/logout">Logout</a><h1>Survey Builder</h1><h2>Survey Configuration</h2>';
             var errormsg = '';
-            var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" required></div><div id="container"></div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
+            var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label for="alias">Survey Name:</label><input type="text" name="alias" required><input type="checkbox" name="live" id="makelive" value="live" disabled><label for="makelive">Check to turn survey live</label></div><div id="container"></div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
             if (returnedArray != null){
                 filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
                 readandadd(filenames,req,res,function(result){
@@ -774,6 +854,8 @@ function handle_database(req,res) {
             var headercontent = '<a href="/logout">Logout</a><h1>Survey Builder</h1><h2>Survey Configuration</h2>';
             var headercontentsurvey = '<a href="/logout">Logout</a><h1>Survey</h1>';
             var titletagsurvey = '<title>Survey</title>';
+            var titletag = '<title>Survey Builder - Survey Configuration</title>';
+            var cssfiles = '';
             var keys = Object.keys(req.body);
             var keyname = "";
             keyname = keys[0];
@@ -790,6 +872,7 @@ function handle_database(req,res) {
             surveyscontent = "";
             for(i = 0; i < keys.length; i++){
                 keyname=keys[i];
+                console.log(keyname);
                 firstchar = keyname.charAt(0);
                 if(firstchar==='q'){
                     questionarray[arraycounter] = keyname;
@@ -799,7 +882,7 @@ function handle_database(req,res) {
                     }
                     questionscontent = questionscontent + '<div id="' + (arraycounter + 1) + '" class="qlabel">\n';
                     questionscontent = questionscontent + '<h3>Question ' + (arraycounter + 1) + '</h3>\n';
-                    questionscontent = questionscontent + '<input type="text" name=q' + (arraycounter + 1) + '" value="' + req.body[keyname] + '" required>\n';
+                    questionscontent = questionscontent + '<input type="text" name="q' + (arraycounter + 1) + '" value="' + req.body[keyname] + '" required>\n';
                     surveyscontent = surveyscontent + '<div class="questionbox">\n<fieldset>\n<legend>' + req.body[keyname] + '</legend>';
                     
                     questionname = keyname;
@@ -833,6 +916,10 @@ function handle_database(req,res) {
             var titletag = '<title>Survey Builder - Survey Configuration</title>';
             var cssfiles = '';
             var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>' + '<script>var qtagcounter = ' + arraycounter + ';var rocounter = ' + optioncounter + ';var idname = "";$(document).ready(function() {$("button[name=\'addelement\']").on("click", function(event){rocounter = 0;qtagcounter++;rocounter++;idname = "#container";var question = $(\'<div id="question\' + qtagcounter + \'" class="qlabel"><h3>Question \' + qtagcounter + \'</h3><input type="text" name="q\' + qtagcounter + \'" placeholder="Question \' + qtagcounter + \' text" required><div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$("#container").append(question);rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);idname = "#container";question = $(\'<div id="questionbutton\' + qtagcounter + \'_\' + rocounter + \'" class="questionbutton"><button value="generate new element" name="addro" type="button">Add Option</button></div>\');console.log(question);$(idname).append(question);});$("#container").on("click",\'button\', function(event){rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);});});</script>';
+            console.log('---------------------------------------');
+            console.log('---------------SCRIPTING---------------');
+            console.log('---------------------------------------');
+            console.log(scripting);
             if (surveyidselection == null) {
                 createsurvey(err,connection,res,req,function(result){
                     returned=result;
@@ -858,11 +945,14 @@ function handle_database(req,res) {
                         });
                         getsurvey(err,connection,res,req,function(result){
                             returnedArray=result;
+                            var titletag = '<title>Survey Builder - Survey Configuration</title>';
+                            var cssfiles = '';
+                            var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>' + '<script>var qtagcounter = ' + arraycounter + ';var rocounter = ' + optioncounter + ';var idname = "";$(document).ready(function() {$("button[name=\'addelement\']").on("click", function(event){rocounter = 0;qtagcounter++;rocounter++;idname = "#container";var question = $(\'<div id="question\' + qtagcounter + \'" class="qlabel"><h3>Question \' + qtagcounter + \'</h3><input type="text" name="q\' + qtagcounter + \'" placeholder="Question \' + qtagcounter + \' text" required><div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$("#container").append(question);rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);idname = "#container";question = $(\'<div id="questionbutton\' + qtagcounter + \'_\' + rocounter + \'" class="questionbutton"><button value="generate new element" name="addro" type="button">Add Option</button></div>\');console.log(question);$(idname).append(question);});$("#container").on("click",\'button\', function(event){rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);});});</script>';
                             var filenamesurvey = returnedArray[0].surveyalias + '.html';
                             var exportfilesurvey = './surveytemplates/' + filenamesurvey;
-                            var maincontentsurvey = '<form action="/survey' + surveyidselection + '" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div id="surveycontainer">' + surveyscontent + '</div><div><div><button type="submit">Submit Survey</button></div></div></form>';
+                            var maincontentsurvey = '<form id="surveysubmit" action="/surveysubmit?surveyid=' + surveyidselection + '" method="post"><div id="surveycontainer">' + surveyscontent + '</div><div><div><button type="submit">Submit Survey</button></div></div></form>';
                             errormsg = errormsg + '<div class="errormsg"><p>Survey created!</p></div>';
-                            var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div id="container">' + questionscontent + '</div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
+                            var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label for="alias">Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required><input type="checkbox" name="live" id="makelive" value="1"><label for="makelive">Check to turn survey live</label></div><div id="container">' + questionscontent + '</div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
                             fs.writeFile(exportfilesurvey, maincontentsurvey, function (err) {
                                 if (err) throw err;
                                 console.log('Survey file written!');
@@ -875,6 +965,10 @@ function handle_database(req,res) {
                                         if (err) throw err;
                                         console.log('File written!');
                                     });
+                                    console.log('---------------------------------------');
+                                    console.log('------------SCRIPTING WRITE------------');
+                                    console.log('---------------------------------------');
+                                    console.log(scripting);
                                     res.write(result);
                                     res.end();
                                 }); 
@@ -883,7 +977,7 @@ function handle_database(req,res) {
                     } else {
                         var scripting = '<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>' + '<script>var qtagcounter = 0;var rocounter = 0;var idname = "";$(document).ready(function() {$("button[name=\'addelement\']").on("click", function(event){rocounter = 0;qtagcounter++;rocounter++;idname = "#container";var question = $(\'<div id="question\' + qtagcounter + \'" class="qlabel"><h3>Question \' + qtagcounter + \'</h3><input type="text" name="q\' + qtagcounter + \'" placeholder="Question \' + qtagcounter + \' text" required><div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$("#container").append(question);rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);idname = "#container";question = $(\'<div id="questionbutton\' + qtagcounter + \'_\' + rocounter + \'" class="questionbutton"><button value="generate new element" name="addro" type="button">Add Option</button></div>\');console.log(question);$(idname).append(question);});$("#container").on("click",\'button\', function(event){rocounter++;idname = "#question" + qtagcounter;question = $(\'<div id="responseoption\' + qtagcounter + \'_\' + rocounter + \'" class="responseoptions"><input type="text" name="o\' + qtagcounter + \'_\' + rocounter + \'" placeholder="Option \' + rocounter + \' text" required></div></div>\');console.log(question);$(idname).append(question);});});</script>';
                         var errormsg = '<div class="errormsg"><p>Survey creation failed, try a different Name.</p></div>';
-                        var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" required></div><div id="container"></div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
+                        var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label for="alias">Survey Name:</label><input type="text" name="alias" required><input type="checkbox" name="live" id="makelive" value="1"><label for="makelive">Check to turn survey live</label></div><div id="container"></div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
                         if (returnedArray != null){
                             filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
                             readandadd(filenames,req,res,function(result){
@@ -899,13 +993,59 @@ function handle_database(req,res) {
                     var filename = 'surveybuilder' + surveyidselection + '.html';
                     var exportfile = './surveytemplates/' + filename;
                     if (returned == 1){
+                        var sql = 'SHOW FIELDS FROM surveybuilder.responses' + surveyidselection;
+                        connection.query(sql,function(err,rows){
+                            if(!err) {
+                                errormsg = '';
+                                console.log('-------------------------------------');
+                                console.log('---------------FIELDS----------------');
+                                console.log('-------------------------------------');
+                                console.log(rows);
+                                console.log(rows.length);
+                                console.log(rows[0].Field);
+                                var tableflag = 0;
+                                for(i = 0; i < arraycounter; i++){
+                                    for(x = 0; x < rows.length; x++){
+                                        if(rows[x].Field == questionarray[i]){
+                                            tableflag = 1;
+                                        }
+                                    }
+                                    if(tableflag == 0){
+                                        console.log(questionarray);
+                                        console.log(questionarray[i]);
+                                        var sql = 'ALTER TABLE responses' + surveyidselection + ' ADD ' + questionarray[i] + ' INT';
+                                        console.log('-------------------------------------');
+                                        console.log('---------------SQL-------------------');
+                                        console.log('-------------------------------------');
+                                        console.log(sql);
+                                        connection.query(sql,function(err,rows){
+                                            if(!err) {
+                                                errormsg = '';
+                                            } else {
+                                                console.log(err);
+                                                errormsg = '<div class="errormsg"><p>Failed to create response table</p></div>';
+                                            }
+                                        });
+                                    }
+                                    tableflag = 0;
+                                }
+                            } else {
+                                console.log(err);
+                                errormsg = '<div class="errormsg"><p>Failed to get FIELDS</p></div>';
+                            }
+                        });
+                        
                         getsurvey(err,connection,res,req,function(result){
                             returnedArray=result;
                             var filenamesurvey = returnedArray[0].surveyalias + '.html';
                             var exportfilesurvey = './surveytemplates/' + filenamesurvey;
-                            var maincontentsurvey = '<form action="/survey' + surveyidselection + '" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div id="surveycontainer">' + surveyscontent + '</div><div><div><button type="submit">Submit Survey</button></div></div></form>';
+                            var maincontentsurvey = '<form id="surveysubmit" action="/surveysubmit?surveyid=' + surveyidselection + '" method="post"><div id="surveycontainer">' + surveyscontent + '</div><div><div><button type="submit">Submit Survey</button></div></div></form>';
                             var errormsg = '<div class="errormsg"><p>Survey updated!</p></div>';
-                            var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div id="container">' + questionscontent + '</div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
+                            if(returnedArray[0].live == 1) {
+                                var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label for="alias">Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required><input type="checkbox" name="live" id="makelive" value="1" checked><label for="makelive">Check to turn survey live</label></div><div id="container">' + questionscontent + '</div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
+                            } else {
+                                var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label for="alias">Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required><input type="checkbox" name="live" id="makelive" value="1"><label for="makelive">Check to turn survey live</label></div><div id="container">' + questionscontent + '</div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
+                            }
                             fs.writeFile(exportfilesurvey, maincontentsurvey, function (err) {
                                 if (err) throw err;
                                 console.log('Survey file written!');
@@ -927,7 +1067,7 @@ function handle_database(req,res) {
                         getsurvey(err,connection,res,req,function(result){
                             returnedArray=result;
                             var errormsg = '<div class="errormsg"><p>Survey update failed, try a different Name.</p></div>';
-                            var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label>Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required></div><div id="container">' + questionscontent + '</div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
+                            var maincontent = errormsg + '<form action="/surveyupdate" method="post"><div><label for="alias">Survey Name:</label><input type="text" name="alias" value="' + returnedArray[0].surveyalias + '" required><input type="checkbox" name="live" id="makelive" value="1"><label for="makelive">Check to turn survey live</label></div><div id="container">' + questionscontent + '</div><div id="surveycreationnav"><button name="addelement" type="button">Add Element</button></div><div><div><button type="submit">Save</button></div></div></form>';
 
                             if (returnedArray != null){
                                 filenames = [1,"./pages/headtop.html",0,titletag,0,cssfiles,0,scripting,1,"./pages/headbottom.html",1,"./pages/headertop.html",0,headercontent,1,"./pages/headerbottom.html",1,"./pages/maintop.html",0,maincontent,1,"./pages/mainbottom.html",1,"./pages/filebottom.html"];     
@@ -1040,7 +1180,7 @@ function getsurveysidbyalias(err,connection,res,req,callback) {
     console.log("Altered Path");
     console.log(alteredpath);
     var returnArray = [];
-    connection.query("select surveyid from survey WHERE surveyalias=?",[alteredpath],function(err,rows){
+    connection.query("select * from survey WHERE surveyalias=?",[alteredpath],function(err,rows){
         if(!err & rows[0] != null) {      
             console.log("rows");
             console.log(rows);
@@ -1222,11 +1362,15 @@ function updateuser(err,connection,res,req,callback) {
 function createsurvey(err,connection,res,req,callback) {
     console.log("check user");
     var a = req.body.alias;
-    var l = 0;
+    var l = req.body.live;
     var ll = host_address + a;
     var tl = host_address + a + "?testing=1";
     var returnArray = [];
     var par = [a, l, ll, tl, userid];
+    console.log('-------------------------------------');
+    console.log('---------------LIVE------------------');
+    console.log('-------------------------------------');
+    console.log(l);
     connection.query("INSERT INTO survey (surveyalias, live, livelink, testlink, userid) VALUES (?,?,?,?,?)",par,function(err,rows){
         if(!err) {
             returnArray = [rows];
@@ -1241,12 +1385,13 @@ function createsurvey(err,connection,res,req,callback) {
 function updatesurvey(err,connection,res,req,callback) {
     console.log("check user");
     var a = req.body.alias;
+    var l = req.body.live;
     var sn = req.body.surveyname;
     var ll = host_address + a;
     var tl = host_address + a + "?testing=1";
     var returnVar = [];
-    var par = [a, ll, tl, surveyidselection];
-    connection.query("UPDATE survey SET surveyalias = ?, livelink = ?, testlink = ? WHERE surveyid = ?",par,function(err,rows){
+    var par = [a, l, ll, tl, surveyidselection];
+    connection.query("UPDATE survey SET surveyalias = ?, live = ?, livelink = ?, testlink = ? WHERE surveyid = ?",par,function(err,rows){
         if(!err) {
             returnVar = 1;
         } else {
